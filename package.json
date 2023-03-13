@@ -1,0 +1,23 @@
+{
+  "name": "notion-to-markdown",
+  "version": "0.0.1",
+  "scripts": {
+    "build": "yarn run tsc",
+    "run:prod": "yarn node ./dist/index.js",
+    "run:dev": "yarn ts-node ./src/index.ts",
+    "lint": "yarn eslint ./src/**"
+  },
+  "dependencies": {
+    "@types/node": "^18.15.1",
+    "typescript": "^4.9.5"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.54.1",
+    "@typescript-eslint/parser": "^5.54.1",
+    "eslint": "^8.36.0",
+    "eslint-config-prettier": "^8.7.0",
+    "prettier": "^2.8.4",
+    "ts-node": "^10.9.1"
+  },
+  "license": "MIT"
+}
