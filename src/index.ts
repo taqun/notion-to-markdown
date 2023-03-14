@@ -1,46 +1,55 @@
-import { Client } from '@notionhq/client';
+import fs from 'fs';
+import path from 'path';
 import {
-  ListBlockChildrenResponse,
+  BlockObjectResponse,
   PageObjectResponse,
 } from '@notionhq/client/build/src/api-endpoints';
+
+import { getArticles, getBlocks } from './api/notion';
+import { Article } from './model/Article';
 import { wait } from './utils/utils';
 
-const hasEnvVars = () => {
+const hasRequiredEnvVars = () => {
   return (
-    process.env.NOTION_TOKEN != null && process.env.NOTION_DATABASE_ID != null
+    process.env.NOTION_TOKEN != null &&
+    process.env.NOTION_DATABASE_ID != null &&
+    process.env.ARTICLES_DIR != null
   );
 };
 
 const main = async () => {
-  if (hasEnvVars() == false) {
+  if (hasRequiredEnvVars() == false) {
     throw new Error('Required env variables is not set.');
   }
 
-  const client = new Client({ auth: process.env.NOTION_TOKEN });
+  const response = await getArticles();
 
-  const response = await client.databases.query({
-    database_id: process.env.NOTION_DATABASE_ID!,
-    filter: {
-      property: 'Status',
-      status: { equals: 'Published' },
-    },
-  });
-
-  const results: {
-    page: PageObjectResponse;
-    blocks: ListBlockChildrenResponse;
-  }[] = [];
+  const articles: Article[] = [];
 
   for (const page of response.results) {
-    const blocks = await client.blocks.children.list({
-      block_id: page.id,
-    });
-    results.push({ page: page as PageObjectResponse, blocks });
+    const blocks = await getBlocks(page.id);
+    articles.push(
+      new Article({
+        page: page as PageObjectResponse,
+        blocks: blocks.results as BlockObjectResponse[],
+      })
+    );
 
     await wait(334);
   }
 
-  console.log(results);
+  const articlesDir = process.env.ARTICLES_DIR;
+
+  if (articlesDir) {
+    fs.mkdirSync(articlesDir, { recursive: true });
+
+    articles.forEach((article) => {
+      fs.writeFileSync(
+        path.join(articlesDir, article.fileName),
+        article.contents
+      );
+    });
+  }
 };
 
 (async () => {

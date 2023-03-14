@@ -14,5 +14,7 @@
     "project": "./tsconfig.json"
   },
   "plugins": ["@typescript-eslint"],
-  "rules": {}
+  "rules": {
+    "prefer-template": "error"
+  }
 }
