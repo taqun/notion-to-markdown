@@ -13,7 +13,7 @@ const hasRequiredEnvVars = () => {
   return (
     process.env.NOTION_TOKEN != null &&
     process.env.NOTION_DATABASE_ID != null &&
-    process.env.ARTICLES_DIR != null
+    process.env.OUT_DIR != null
   );
 };
 
@@ -28,26 +28,24 @@ const main = async () => {
 
   for (const page of response.results) {
     const blocks = await getBlocks(page.id);
-    articles.push(
-      new Article({
-        page: page as PageObjectResponse,
-        blocks: blocks.results as BlockObjectResponse[],
-      })
-    );
+
+    const article = new Article();
+    await article.parse({
+      page: page as PageObjectResponse,
+      blocks: blocks.results as BlockObjectResponse[],
+    });
+    articles.push(article);
 
     await wait(334);
   }
 
-  const articlesDir = process.env.ARTICLES_DIR;
+  const outDir = process.env.OUT_DIR;
 
-  if (articlesDir) {
-    fs.mkdirSync(articlesDir, { recursive: true });
+  if (outDir) {
+    fs.mkdirSync(outDir, { recursive: true });
 
     articles.forEach((article) => {
-      fs.writeFileSync(
-        path.join(articlesDir, article.fileName),
-        article.contents
-      );
+      fs.writeFileSync(path.join(outDir, article.fileName), article.contents);
     });
   }
 };

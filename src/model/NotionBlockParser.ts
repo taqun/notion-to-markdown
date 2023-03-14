@@ -1,12 +1,18 @@
+import fs from 'fs';
+import path from 'path';
+import fetch from 'node-fetch';
 import {
   BlockObjectResponse,
+  ImageBlockObjectResponse,
   RichTextItemResponse,
 } from '@notionhq/client/build/src/api-endpoints';
 
-export const parseBlocks = (blocks: BlockObjectResponse[]) => {
+export const parseBlocks = async (blocks: BlockObjectResponse[]) => {
   let results = '\n';
 
-  blocks.forEach((block) => {
+  for (const [i, block] of blocks.entries()) {
+    const isLast = i === blocks.length - 1;
+
     switch (block.type) {
       case 'heading_1':
         results += `# ${block.heading_1.rich_text[0].plain_text}\n\n`;
@@ -22,11 +28,34 @@ export const parseBlocks = (blocks: BlockObjectResponse[]) => {
         break;
       case 'bulleted_list_item':
         results += `- ${block.bulleted_list_item.rich_text[0].plain_text}\n`;
+
+        if (!isLast && blocks[i + 1].type !== 'bulleted_list_item') {
+          results += '\n';
+        }
+        break;
+      case 'numbered_list_item':
+        results += `+ ${block.numbered_list_item.rich_text[0].plain_text}\n`;
+
+        if (!isLast && blocks[i + 1].type !== 'numbered_list_item') {
+          results += '\n';
+        }
+        break;
+      case 'quote':
+        results += `> ${block.quote.rich_text[0].plain_text}\n\n`;
+        break;
+      case 'code':
+        results += `\`\`\`
+${block.code.rich_text[0].plain_text}
+\`\`\`\n\n`;
+        break;
+      case 'image':
+        results += await parseImage(block.image, block.id);
         break;
       default:
+        console.log(block.type);
         break;
     }
-  });
+  }
 
   return results;
 };
@@ -47,12 +76,13 @@ const parseRichText = (richText: RichTextItemResponse) => {
   }
 
   if (annotations.italic) {
-    return `*${plain_text}*`;
+    return `_${plain_text}_`;
   }
 
-  if (annotations.underline) {
-    return `__${plain_text}__`;
-  }
+  // markdownにアンダーラインの記法がない
+  // if (annotations.underline) {
+  //   return `__${plain_text}__`;
+  // }
 
   if (annotations.strikethrough) {
     return `~~${plain_text}~~`;
@@ -63,4 +93,47 @@ const parseRichText = (richText: RichTextItemResponse) => {
   }
 
   return plain_text;
+};
+
+const parseImage = async (
+  image: ImageBlockObjectResponse['image'],
+  blockId: string
+) => {
+  let results = '';
+  let savedPath = '';
+
+  switch (image.type) {
+    case 'file':
+      savedPath = await parseImageFile(image.file.url, blockId);
+      results = `![${image.caption}](${savedPath})\n\n`;
+      break;
+    case 'external':
+      results = `![${image.caption}](${image.external.url})\n\n`;
+      break;
+    default:
+      break;
+  }
+
+  return results;
+};
+
+const parseImageFile = async (url: string, blockId: string) => {
+  let imagePath = '';
+
+  const imageDir = process.env.IMAGE_DIR;
+  if (imageDir) {
+    fs.mkdirSync(path.join(imageDir, 'images'), { recursive: true });
+
+    const extname = path.extname(new URL(url).pathname);
+    const fileName = blockId + extname;
+    const filePath = path.join(imageDir, 'images', fileName);
+    imagePath = path.join('/images', fileName);
+
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    fs.writeFileSync(filePath, buffer);
+  }
+
+  return imagePath;
 };

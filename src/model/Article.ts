@@ -14,16 +14,12 @@ export class Article {
   public fileName = '';
   public contents = '';
 
-  constructor(data: ArticleData) {
-    this.parse(data);
-  }
-
-  private parse(data: ArticleData) {
+  async parse(data: ArticleData) {
     const { date, title, slug } = this.parseProperties(data.page.properties);
 
     this.fileName = `${date}-${slug}.md`;
 
-    const pageContents = this.parseBlocks(data.blocks);
+    const pageContents = await this.parseBlocks(data.blocks);
     this.contents = matter.stringify(pageContents, { title });
   }
 
