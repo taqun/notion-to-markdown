@@ -8,6 +8,7 @@
     "lint": "yarn eslint ./src/**"
   },
   "dependencies": {
+    "@notionhq/client": "^2.2.3",
     "@types/node": "^18.15.1",
     "typescript": "^4.9.5"
   },
