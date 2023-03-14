@@ -1,13 +1,16 @@
 {
   "name": "notion-to-markdown",
   "version": "0.0.1",
+  "main": "lib/index.js",
   "scripts": {
-    "build": "yarn run tsc",
+    "build": "rm -rf ./lib && yarn run tsc",
+    "package": "rm -rf ./dist && ncc build --source-map --license licenses.txt",
     "run:prod": "yarn node ./dist/index.js",
     "run:dev": "yarn ts-node ./src/index.ts",
     "lint": "yarn eslint ./src/**"
   },
   "dependencies": {
+    "@actions/core": "^1.10.0",
     "@notionhq/client": "^2.2.3",
     "@types/node": "^18.15.1",
     "gray-matter": "^4.0.3",
@@ -16,6 +19,7 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.54.1",
     "@typescript-eslint/parser": "^5.54.1",
+    "@vercel/ncc": "^0.36.1",
     "eslint": "^8.36.0",
     "eslint-config-prettier": "^8.7.0",
     "prettier": "^2.8.4",

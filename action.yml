@@ -1,0 +1,10 @@
+name: notion-to-markdown
+description: 'Export notion data to markdown files'
+# inputs:
+#   milliseconds:
+#     required: true
+#     description: 'input description here'
+#     default: 'default value if applicable'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

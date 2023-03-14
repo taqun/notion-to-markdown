@@ -7,8 +7,8 @@
 !.yarn/versions
 
 node_modules/
-dist/
 
 .envrc
 articles/
 public/
+lib/
