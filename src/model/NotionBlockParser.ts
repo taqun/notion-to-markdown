@@ -122,10 +122,10 @@ const parseImage = async (
   switch (image.type) {
     case 'file':
       savedPath = await parseImageFile(image.file.url, blockId);
-      results = `![${image.caption}](${savedPath})\n\n`;
+      results = `![${image.caption[0].plain_text}](${savedPath})\n\n`;
       break;
     case 'external':
-      results = `![${image.caption}](${image.external.url})\n\n`;
+      results = `![${image.caption[0].plain_text}](${image.external.url})\n\n`;
       break;
     default:
       break;
