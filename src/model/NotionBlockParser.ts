@@ -79,10 +79,9 @@ const parseRichText = (richText: RichTextItemResponse) => {
     return `_${plain_text}_`;
   }
 
-  // markdownにアンダーラインの記法がない
-  // if (annotations.underline) {
-  //   return `__${plain_text}__`;
-  // }
+  if (annotations.underline) {
+    return `<u>${plain_text}</u>`;
+  }
 
   if (annotations.strikethrough) {
     return `~~${plain_text}~~`;
