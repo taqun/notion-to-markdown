@@ -16,7 +16,8 @@ export const parseBlocks = async (
 
   for (const [i, block] of blocks.entries()) {
     const isLast = i === blocks.length - 1;
-    const indent = '  '.repeat(depth);
+    const indent2space = '  '.repeat(depth);
+    const indent3space = '   '.repeat(depth);
 
     switch (block.type) {
       case 'heading_1':
@@ -32,7 +33,7 @@ export const parseBlocks = async (
         results += `${parseRichTexts(block.paragraph.rich_text)}\n\n`;
         break;
       case 'bulleted_list_item':
-        results += `${indent}- ${block.bulleted_list_item.rich_text[0].plain_text}\n`;
+        results += `${indent2space}- ${block.bulleted_list_item.rich_text[0].plain_text}\n`;
 
         if (
           block.children == null &&
@@ -43,7 +44,7 @@ export const parseBlocks = async (
         }
         break;
       case 'numbered_list_item':
-        results += `${indent}+ ${block.numbered_list_item.rich_text[0].plain_text}\n`;
+        results += `${indent3space}1. ${block.numbered_list_item.rich_text[0].plain_text}\n`;
 
         if (
           block.children == null &&
