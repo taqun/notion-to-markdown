@@ -1,9 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import {
-  BlockObjectResponse,
-  PageObjectResponse,
-} from '@notionhq/client/build/src/api-endpoints';
+import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 
 import { getArticles, getBlocks } from './api/notion';
 import { Article } from './model/Article';
@@ -32,7 +29,7 @@ const main = async () => {
     const article = new Article();
     await article.parse({
       page: page as PageObjectResponse,
-      blocks: blocks.results as BlockObjectResponse[],
+      blocks: blocks,
     });
     articles.push(article);
 

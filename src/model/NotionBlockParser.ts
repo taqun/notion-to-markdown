@@ -2,16 +2,21 @@ import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
 import {
-  BlockObjectResponse,
   ImageBlockObjectResponse,
   RichTextItemResponse,
 } from '@notionhq/client/build/src/api-endpoints';
 
-export const parseBlocks = async (blocks: BlockObjectResponse[]) => {
-  let results = '\n';
+import { ExtendBlockObjectResponse } from '../types/notion';
+
+export const parseBlocks = async (
+  blocks: ExtendBlockObjectResponse[],
+  depth = 0
+) => {
+  let results = depth == 0 ? '\n' : '';
 
   for (const [i, block] of blocks.entries()) {
     const isLast = i === blocks.length - 1;
+    const indent = '  '.repeat(depth);
 
     switch (block.type) {
       case 'heading_1':
@@ -27,16 +32,24 @@ export const parseBlocks = async (blocks: BlockObjectResponse[]) => {
         results += `${parseRichTexts(block.paragraph.rich_text)}\n\n`;
         break;
       case 'bulleted_list_item':
-        results += `- ${block.bulleted_list_item.rich_text[0].plain_text}\n`;
+        results += `${indent}- ${block.bulleted_list_item.rich_text[0].plain_text}\n`;
 
-        if (!isLast && blocks[i + 1].type !== 'bulleted_list_item') {
+        if (
+          block.children == null &&
+          !isLast &&
+          blocks[i + 1].type !== 'bulleted_list_item'
+        ) {
           results += '\n';
         }
         break;
       case 'numbered_list_item':
-        results += `+ ${block.numbered_list_item.rich_text[0].plain_text}\n`;
+        results += `${indent}+ ${block.numbered_list_item.rich_text[0].plain_text}\n`;
 
-        if (!isLast && blocks[i + 1].type !== 'numbered_list_item') {
+        if (
+          block.children == null &&
+          !isLast &&
+          blocks[i + 1].type !== 'numbered_list_item'
+        ) {
           results += '\n';
         }
         break;
@@ -54,6 +67,11 @@ ${block.code.rich_text[0].plain_text}
       default:
         console.log(block.type);
         break;
+    }
+
+    if (block.children) {
+      const childContents = await parseBlocks(block.children, depth + 1);
+      results += childContents;
     }
   }
 
