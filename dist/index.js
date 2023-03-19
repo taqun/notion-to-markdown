@@ -18,6 +18,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getBlocks = exports.getArticles = void 0;
 const client_1 = __nccwpck_require__(324);
+const utils_1 = __nccwpck_require__(1316);
 const client = new client_1.Client({ auth: process.env.NOTION_TOKEN });
 const getArticles = () => __awaiter(void 0, void 0, void 0, function* () {
     const databaseId = process.env.NOTION_DATABASE_ID;
@@ -34,9 +35,30 @@ const getArticles = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.getArticles = getArticles;
 const getBlocks = (blockId) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield client.blocks.children.list({
-        block_id: blockId,
-    });
+    const blocks = [];
+    let startCursor = null;
+    do {
+        const { results, next_cursor, has_more } = yield client.blocks.children.list({
+            block_id: blockId,
+            page_size: 100,
+            start_cursor: startCursor || undefined,
+        });
+        for (const block of results) {
+            if ('has_children' in block && block.has_children) {
+                yield (0, utils_1.wait)(334);
+                const children = yield (0, exports.getBlocks)(block.id);
+                blocks.push(Object.assign(Object.assign({}, block), { children }));
+            }
+            else {
+                blocks.push(block);
+            }
+        }
+        startCursor = has_more ? next_cursor : null;
+        if (startCursor != null) {
+            yield (0, utils_1.wait)(334);
+        }
+    } while (startCursor != null);
+    return blocks;
 });
 exports.getBlocks = getBlocks;
 
@@ -82,7 +104,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         const article = new Article_1.Article();
         yield article.parse({
             page: page,
-            blocks: blocks.results,
+            blocks: blocks,
         });
         articles.push(article);
         yield (0, utils_1.wait)(334);
@@ -182,10 +204,12 @@ exports.parseBlocks = void 0;
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const node_fetch_1 = __importDefault(__nccwpck_require__(467));
-const parseBlocks = (blocks) => __awaiter(void 0, void 0, void 0, function* () {
-    let results = '\n';
+const parseBlocks = (blocks, depth = 0) => __awaiter(void 0, void 0, void 0, function* () {
+    let results = depth == 0 ? '\n' : '';
     for (const [i, block] of blocks.entries()) {
         const isLast = i === blocks.length - 1;
+        const indent2space = '  '.repeat(depth);
+        const indent3space = '   '.repeat(depth);
         switch (block.type) {
             case 'heading_1':
                 results += `# ${block.heading_1.rich_text[0].plain_text}\n\n`;
@@ -200,14 +224,18 @@ const parseBlocks = (blocks) => __awaiter(void 0, void 0, void 0, function* () {
                 results += `${parseRichTexts(block.paragraph.rich_text)}\n\n`;
                 break;
             case 'bulleted_list_item':
-                results += `- ${block.bulleted_list_item.rich_text[0].plain_text}\n`;
-                if (!isLast && blocks[i + 1].type !== 'bulleted_list_item') {
+                results += `${indent2space}- ${block.bulleted_list_item.rich_text[0].plain_text}\n`;
+                if (block.children == null &&
+                    !isLast &&
+                    blocks[i + 1].type !== 'bulleted_list_item') {
                     results += '\n';
                 }
                 break;
             case 'numbered_list_item':
-                results += `+ ${block.numbered_list_item.rich_text[0].plain_text}\n`;
-                if (!isLast && blocks[i + 1].type !== 'numbered_list_item') {
+                results += `${indent3space}1. ${block.numbered_list_item.rich_text[0].plain_text}\n`;
+                if (block.children == null &&
+                    !isLast &&
+                    blocks[i + 1].type !== 'numbered_list_item') {
                     results += '\n';
                 }
                 break;
@@ -225,6 +253,10 @@ ${block.code.rich_text[0].plain_text}
             default:
                 console.log(block.type);
                 break;
+        }
+        if (block.children) {
+            const childContents = yield (0, exports.parseBlocks)(block.children, depth + 1);
+            results += childContents;
         }
     }
     return results;
@@ -244,10 +276,9 @@ const parseRichText = (richText) => {
     if (annotations.italic) {
         return `_${plain_text}_`;
     }
-    // markdownにアンダーラインの記法がない
-    // if (annotations.underline) {
-    //   return `__${plain_text}__`;
-    // }
+    if (annotations.underline) {
+        return `<u>${plain_text}</u>`;
+    }
     if (annotations.strikethrough) {
         return `~~${plain_text}~~`;
     }
@@ -262,10 +293,10 @@ const parseImage = (image, blockId) => __awaiter(void 0, void 0, void 0, functio
     switch (image.type) {
         case 'file':
             savedPath = yield parseImageFile(image.file.url, blockId);
-            results = `![${image.caption}](${savedPath})\n\n`;
+            results = `![${image.caption[0].plain_text}](${savedPath})\n\n`;
             break;
         case 'external':
-            results = `![${image.caption}](${image.external.url})\n\n`;
+            results = `![${image.caption[0].plain_text}](${image.external.url})\n\n`;
             break;
         default:
             break;
