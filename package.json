@@ -7,6 +7,7 @@
     "package": "rm -rf ./dist && ncc build --source-map --license licenses.txt",
     "run:prod": "yarn node ./dist/index.js",
     "run:dev": "yarn ts-node ./src/index.ts",
+    "run:draft": "INCLUDE_DRAFT=true yarn ts-node ./src/index.ts",
     "lint": "yarn eslint ./src/**"
   },
   "dependencies": {

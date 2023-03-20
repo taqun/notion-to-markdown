@@ -27,12 +27,20 @@ class NotionClient {
             if (this.client == null) {
                 throw new Error('Client is not initialized.');
             }
-            return yield this.client.databases.query({
-                database_id: databaseId,
-                filter: {
+            const filter = process.env.INCLUDE_DRAFT
+                ? {
+                    or: [
+                        { property: 'Status', status: { equals: 'Draft' } },
+                        { property: 'Status', status: { equals: 'Published' } },
+                    ],
+                }
+                : {
                     property: 'Status',
                     status: { equals: 'Published' },
-                },
+                };
+            return yield this.client.databases.query({
+                database_id: databaseId,
+                filter,
             });
         });
     }
