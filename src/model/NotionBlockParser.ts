@@ -10,6 +10,7 @@ import { ExtendBlockObjectResponse } from '../types/notion';
 
 export const parseBlocks = async (
   blocks: ExtendBlockObjectResponse[],
+  imageDir: string | null,
   depth = 0
 ) => {
   let results = depth == 0 ? '\n' : '';
@@ -63,7 +64,7 @@ ${block.code.rich_text[0].plain_text}
 \`\`\`\n\n`;
         break;
       case 'image':
-        results += await parseImage(block.image, block.id);
+        results += await parseImage(block.image, block.id, imageDir);
         break;
       default:
         console.log(block.type);
@@ -71,7 +72,11 @@ ${block.code.rich_text[0].plain_text}
     }
 
     if (block.children) {
-      const childContents = await parseBlocks(block.children, depth + 1);
+      const childContents = await parseBlocks(
+        block.children,
+        imageDir,
+        depth + 1
+      );
       results += childContents;
     }
   }
@@ -115,14 +120,15 @@ const parseRichText = (richText: RichTextItemResponse) => {
 
 const parseImage = async (
   image: ImageBlockObjectResponse['image'],
-  blockId: string
+  blockId: string,
+  imageDir: string | null
 ) => {
   let results = '';
   let savedPath = '';
 
   switch (image.type) {
     case 'file':
-      savedPath = await parseImageFile(image.file.url, blockId);
+      savedPath = await parseImageFile(image.file.url, blockId, imageDir);
       results = `![${image.caption[0].plain_text}](${savedPath})\n\n`;
       break;
     case 'external':
@@ -135,10 +141,13 @@ const parseImage = async (
   return results;
 };
 
-const parseImageFile = async (url: string, blockId: string) => {
+const parseImageFile = async (
+  url: string,
+  blockId: string,
+  imageDir: string | null
+) => {
   let imagePath = '';
 
-  const imageDir = process.env.IMAGE_DIR;
   if (imageDir) {
     fs.mkdirSync(path.join(imageDir, 'images'), { recursive: true });
 

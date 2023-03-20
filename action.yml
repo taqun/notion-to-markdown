@@ -1,10 +1,22 @@
 name: notion-to-markdown
 description: 'Export notion data to markdown files'
-# inputs:
-#   milliseconds:
-#     required: true
-#     description: 'input description here'
-#     default: 'default value if applicable'
+
+inputs:
+  notionToken:
+    required: true
+    description: 'Notion API Token'
+  notionDatabaseId:
+    required: true
+    description: 'Notion Database Id to export data'
+  outDir:
+    required: false
+    description: 'Output directory of markdown files'
+    default: './articles/'
+  imageDir:
+    required: false
+    description: 'Parent directory of image file attached to markdown files'
+    default: './public/'
+
 runs:
   using: 'node16'
   main: 'dist/index.js'

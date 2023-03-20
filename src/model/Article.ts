@@ -14,7 +14,11 @@ export class Article {
   public fileName = '';
   public contents = '';
 
-  async parse(data: ArticleData) {
+  private imageDir: string | null = null;
+
+  async parse(data: ArticleData, imageDir: string) {
+    this.imageDir = imageDir;
+
     const { date, title, slug } = this.parseProperties(data.page.properties);
 
     this.fileName = `${date}-${slug}.md`;
@@ -43,7 +47,7 @@ export class Article {
   }
 
   private parseBlocks(blocks: BlockObjectResponse[]) {
-    const result = parseBlocks(blocks);
+    const result = parseBlocks(blocks, this.imageDir);
     return result;
   }
 }

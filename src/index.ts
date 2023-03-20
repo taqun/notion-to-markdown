@@ -1,42 +1,43 @@
 import fs from 'fs';
 import path from 'path';
 import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import * as core from '@actions/core';
 
-import { getArticles, getBlocks } from './api/notion';
 import { Article } from './model/Article';
 import { wait } from './utils/utils';
-
-const hasRequiredEnvVars = () => {
-  return (
-    process.env.NOTION_TOKEN != null &&
-    process.env.NOTION_DATABASE_ID != null &&
-    process.env.OUT_DIR != null
-  );
-};
+import NotionClient from './api/notion';
 
 const main = async () => {
-  if (hasRequiredEnvVars() == false) {
-    throw new Error('Required env variables is not set.');
+  const notionToken = core.getInput('notionToken');
+  const notionDatabaseId = core.getInput('notionDatabaseId');
+  const outDir = core.getInput('outDir') || './articles/';
+  const imageDir = core.getInput('imageDir') || './public/';
+
+  if (notionToken == null || notionDatabaseId == null) {
+    throw new Error('Required inputs is not set.');
   }
 
-  const response = await getArticles();
+  const notionClient = new NotionClient(notionToken);
+
+  const response = await notionClient.getArticles(notionDatabaseId);
 
   const articles: Article[] = [];
 
   for (const page of response.results) {
-    const blocks = await getBlocks(page.id);
+    const blocks = await notionClient.getBlocks(page.id);
 
     const article = new Article();
-    await article.parse({
-      page: page as PageObjectResponse,
-      blocks: blocks,
-    });
+    await article.parse(
+      {
+        page: page as PageObjectResponse,
+        blocks: blocks,
+      },
+      imageDir
+    );
     articles.push(article);
 
     await wait(334);
   }
-
-  const outDir = process.env.OUT_DIR;
 
   if (outDir) {
     fs.mkdirSync(outDir, { recursive: true });
@@ -47,6 +48,10 @@ const main = async () => {
   }
 };
 
-(async () => {
-  await main();
-})();
+try {
+  main();
+} catch (error) {
+  if (error instanceof Error) {
+    core.setFailed(error.message);
+  }
+}

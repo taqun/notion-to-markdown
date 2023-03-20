@@ -7,52 +7,62 @@ import {
 import { ExtendBlockObjectResponse } from '../types/notion';
 import { wait } from '../utils/utils';
 
-const client = new Client({ auth: process.env.NOTION_TOKEN });
+class NotionClient {
+  private client?: Client;
 
-export const getArticles = async () => {
-  const databaseId = process.env.NOTION_DATABASE_ID;
-
-  if (databaseId == null) {
-    throw new Error('NOTION_DATABASE_ID is not set.');
+  constructor(token: string) {
+    this.client = new Client({ auth: token });
   }
 
-  return await client.databases.query({
-    database_id: databaseId,
-    filter: {
-      property: 'Status',
-      status: { equals: 'Published' },
-    },
-  });
-};
+  async getArticles(databaseId: string) {
+    if (this.client == null) {
+      throw new Error('Client is not initialized.');
+    }
 
-export const getBlocks = async (blockId: string) => {
-  const blocks: ExtendBlockObjectResponse[] = [];
-  let startCursor = null;
+    return await this.client.databases.query({
+      database_id: databaseId,
+      filter: {
+        property: 'Status',
+        status: { equals: 'Published' },
+      },
+    });
+  }
 
-  do {
-    const { results, next_cursor, has_more }: ListBlockChildrenResponse =
-      await client.blocks.children.list({
-        block_id: blockId,
-        page_size: 100,
-        start_cursor: startCursor || undefined,
-      });
+  async getBlocks(blockId: string) {
+    if (this.client == null) {
+      throw new Error('Client is not initialized.');
+    }
 
-    for (const block of results) {
-      if ('has_children' in block && block.has_children) {
-        await wait(334);
+    const blocks: ExtendBlockObjectResponse[] = [];
+    let startCursor = null;
 
-        const children = await getBlocks(block.id);
-        blocks.push({ ...block, children });
-      } else {
-        blocks.push(block as BlockObjectResponse);
+    do {
+      const { results, next_cursor, has_more }: ListBlockChildrenResponse =
+        await this.client.blocks.children.list({
+          block_id: blockId,
+          page_size: 100,
+          start_cursor: startCursor || undefined,
+        });
+
+      for (const block of results) {
+        if ('has_children' in block && block.has_children) {
+          await wait(334);
+
+          const children = await this.getBlocks(block.id);
+          blocks.push({ ...block, children });
+        } else {
+          blocks.push(block as BlockObjectResponse);
+        }
       }
-    }
 
-    startCursor = has_more ? next_cursor : null;
-    if (startCursor != null) {
-      await wait(334);
-    }
-  } while (startCursor != null);
+      startCursor = has_more ? next_cursor : null;
+      if (startCursor != null) {
+        await wait(334);
+      }
+    } while (startCursor != null);
 
-  return blocks;
-};
+    return blocks;
+  }
+}
+
+export default NotionClient;
