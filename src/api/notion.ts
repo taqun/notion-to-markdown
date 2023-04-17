@@ -14,6 +14,24 @@ class NotionClient {
     this.client = new Client({ auth: token });
   }
 
+  async getArticle(databaseId: string, slug: string) {
+    if (this.client == null) {
+      throw new Error('Client is not initialized.');
+    }
+
+    const filter = {
+      property: 'Slug',
+      rich_text: {
+        contains: slug,
+      },
+    };
+
+    return await this.client.databases.query({
+      database_id: databaseId,
+      filter,
+    });
+  }
+
   async getArticles(databaseId: string) {
     if (this.client == null) {
       throw new Error('Client is not initialized.');
