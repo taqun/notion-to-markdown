@@ -353,13 +353,14 @@ const parseRichText = (richText) => {
 const parseImage = (image, blockId, imageDir) => __awaiter(void 0, void 0, void 0, function* () {
     let results = '';
     let savedPath = '';
+    const altText = image.caption[0] != null ? image.caption[0].plain_text : '';
     switch (image.type) {
         case 'file':
             savedPath = yield parseImageFile(image.file.url, blockId, imageDir);
-            results = `![${image.caption[0].plain_text}](${savedPath})\n\n`;
+            results = `![${altText}](${savedPath})\n\n`;
             break;
         case 'external':
-            results = `![${image.caption[0].plain_text}](${image.external.url})\n\n`;
+            results = `![${altText}](${image.external.url})\n\n`;
             break;
         default:
             break;
