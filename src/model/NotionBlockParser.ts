@@ -126,15 +126,23 @@ const parseImage = async (
   let results = '';
   let savedPath = '';
 
-  const altText = image.caption[0] != null ? image.caption[0].plain_text : '';
+  const caption = image.caption[0]?.plain_text;
 
   switch (image.type) {
     case 'file':
       savedPath = await parseImageFile(image.file.url, blockId, imageDir);
-      results = `![${altText}](${savedPath})\n\n`;
+      if (caption) {
+        results = `![${caption}](${savedPath} "${caption}")\n\n`;
+      } else {
+        results = `![](${savedPath})\n\n`;
+      }
       break;
     case 'external':
-      results = `![${altText}](${image.external.url})\n\n`;
+      if (caption) {
+        results = `![${caption}](${image.external.url} "${caption}")\n\n`;
+      } else {
+        results = `![](${image.external.url})\n\n`;
+      }
       break;
     default:
       break;
