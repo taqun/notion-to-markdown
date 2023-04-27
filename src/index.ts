@@ -8,8 +8,9 @@ import { wait } from './utils/utils';
 import NotionClient from './api/notion';
 
 const main = async () => {
-  const notionToken = core.getInput('notionToken');
-  const notionDatabaseId = core.getInput('notionDatabaseId');
+  const notionToken = core.getInput('notionToken') || process.env.NOTION_TOKEN;
+  const notionDatabaseId =
+    core.getInput('notionDatabaseId') || process.env.NOTION_DATABASE_ID;
   const outDir = core.getInput('outDir') || './articles/';
   const imageDir = core.getInput('imageDir') || './public/';
 

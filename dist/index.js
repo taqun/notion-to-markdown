@@ -146,8 +146,8 @@ const Article_1 = __nccwpck_require__(3432);
 const utils_1 = __nccwpck_require__(1316);
 const notion_1 = __importDefault(__nccwpck_require__(7533));
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
-    const notionToken = core.getInput('notionToken');
-    const notionDatabaseId = core.getInput('notionDatabaseId');
+    const notionToken = core.getInput('notionToken') || process.env.NOTION_TOKEN;
+    const notionDatabaseId = core.getInput('notionDatabaseId') || process.env.NOTION_DATABASE_ID;
     const outDir = core.getInput('outDir') || './articles/';
     const imageDir = core.getInput('imageDir') || './public/';
     if (notionToken == null || notionDatabaseId == null) {
