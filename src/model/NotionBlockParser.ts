@@ -34,7 +34,9 @@ export const parseBlocks = async (
         results += `${parseRichTexts(block.paragraph.rich_text)}\n\n`;
         break;
       case 'bulleted_list_item':
-        results += `${indent2space}- ${block.bulleted_list_item.rich_text[0].plain_text}\n`;
+        results += `${indent2space}- ${parseRichTexts(
+          block.bulleted_list_item.rich_text
+        )}\n`;
 
         if (
           block.children == null &&
@@ -45,7 +47,9 @@ export const parseBlocks = async (
         }
         break;
       case 'numbered_list_item':
-        results += `${indent3space}1. ${block.numbered_list_item.rich_text[0].plain_text}\n`;
+        results += `${indent3space}1. ${parseRichTexts(
+          block.numbered_list_item.rich_text
+        )}\n`;
 
         if (
           block.children == null &&
